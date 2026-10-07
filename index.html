@@ -79,9 +79,12 @@
             <div class="cards-container">
                 <div class="dashboard-card">
                     <h3>Create Task</h3>
-                    <div style="margin-top: 10px;">Input Location (X, Y from 0-800)</div>
-                    <input type="number" id="task-x" placeholder="X (0-800)" min="0" max="800">
-                    <input type="number" id="task-y" placeholder="Y (0-600)" min="0" max="600">
+                    <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>Input Location (X, Y from 0-800)</span>
+                        <button id="btn-randomize-task" class="btn btn-secondary" style="width: auto; padding: 4px 12px; font-size: 0.75rem; margin: 0;">🎲 Randomize</button>
+                    </div>
+                    <input type="number" id="task-x" placeholder="Enter X coordinate" min="0" max="800">
+                    <input type="number" id="task-y" placeholder="Enter Y coordinate" min="0" max="600">
                     <select id="task-type" onchange="document.getElementById('task-type-custom').style.display = this.value === 'Other' ? 'block' : 'none';">
                         <option value="Plumber">Plumber</option>
                         <option value="Electrician">Electrician</option>
@@ -124,9 +127,12 @@
                         <option value="Other">Other</option>
                     </select>
                     <input type="text" id="worker-job-custom" placeholder="Specify custom job type..." style="display: none; margin-top: 8px;">
-                    <div style="margin-top: 10px;">Location (X, Y from 0-800)</div>
-                    <input type="number" id="worker-x" placeholder="X (0-800)" min="0" max="800">
-                    <input type="number" id="worker-y" placeholder="Y (0-600)" min="0" max="600">
+                    <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>Location (X, Y from 0-800)</span>
+                        <button id="btn-randomize-worker" class="btn btn-secondary" style="width: auto; padding: 4px 12px; font-size: 0.75rem; margin: 0;">🎲 Randomize</button>
+                    </div>
+                    <input type="number" id="worker-x" placeholder="Enter X coordinate" min="0" max="800">
+                    <input type="number" id="worker-y" placeholder="Enter Y coordinate" min="0" max="600">
                     <button id="btn-update-worker" class="btn btn-primary">Update Profile</button>
                     <div id="worker-msg"></div>
                 </div>
@@ -245,6 +251,26 @@
         </main>
         
         <!-- STATS BAR for ADMIN -->
+    </div>
+    <!-- COMPLETION OVERLAY -->
+    <div id="completion-overlay" class="modal-overlay hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; pointer-events: none;">
+      <div class="modal-container text-center" style="background: var(--bg-primary); padding: 40px; border-radius: 16px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transform: translateY(20px); transition: all 0.3s ease; border: 1px solid var(--border-color);">
+        <div style="width: 60px; height: 60px; border-radius: 50%; background: #dcfce7; color: #16a34a; font-size: 32px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">✓</div>
+        <h2 style="color: var(--accent-green); margin-bottom: 30px; font-size: 1.5rem;">Stable Matching Found</h2>
+        
+        <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+          <div>
+            <div id="summary-matched" style="font-size: 2rem; font-weight: 700; color: var(--accent-blue);">0</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Matched Pairs</div>
+          </div>
+          <div>
+            <div id="summary-proposals" style="font-size: 2rem; font-weight: 700; color: var(--accent-purple);">0</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Total Steps</div>
+          </div>
+        </div>
+        
+        <button id="btn-close-summary" class="btn btn-primary" style="width: 100%; pointer-events: auto;">View Dashboard</button>
+      </div>
     </div>
   
   <script src="script.js"></script>

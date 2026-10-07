@@ -9,6 +9,7 @@ let realtimeSubscription = null;
 let adminTasks = [];
 let adminWorkers = [];
 let currentSteps = []; // from server
+let isAnimating = false;
 
 // DOM Elements
 const authScreen = document.getElementById('auth-screen');
@@ -59,22 +60,30 @@ async function handleClearDB() {
 const API_URL = 'http://localhost:3000';
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-// Random starting positions helper
-function setRandomPositions() {
-    const rx = Math.floor(Math.random() * 700) + 50;
-    const ry = Math.floor(Math.random() * 500) + 50;
+// Random positions helpers — only fill when user clicks Randomize
+function randomizeTaskInputs() {
     const tx = document.getElementById('task-x');
     const ty = document.getElementById('task-y');
-    if (tx && ty) { tx.value = rx; ty.value = ry; }
+    if (tx) tx.value = Math.floor(Math.random() * 700) + 50;
+    if (ty) ty.value = Math.floor(Math.random() * 500) + 50;
+}
 
+function randomizeWorkerInputs() {
     const wx = document.getElementById('worker-x');
     const wy = document.getElementById('worker-y');
-    if (wx && wy) { wx.value = rx; wy.value = ry; }
+    if (wx) wx.value = Math.floor(Math.random() * 700) + 50;
+    if (wy) wy.value = Math.floor(Math.random() * 500) + 50;
 }
+
+// Randomize button listeners
+const btnRandTask = document.getElementById('btn-randomize-task');
+if (btnRandTask) btnRandTask.addEventListener('click', randomizeTaskInputs);
+
+const btnRandWorker = document.getElementById('btn-randomize-worker');
+if (btnRandWorker) btnRandWorker.addEventListener('click', randomizeWorkerInputs);
 
 // Initial Setup - Fetch Config
 async function initializeApp() {
-    setRandomPositions();
     try {
         const response = await fetch(API_URL + '/api/config');
         if (!response.ok) throw new Error('Config fetch failed');
@@ -210,9 +219,24 @@ function showScreen(screen, role = null) {
 function initializeDashboard(role) {
     if (role === 'requester') {
         loadRequesterTasks();
+        
+        realtimeSubscription = supabaseClient.channel('requester-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, payload => {
+                loadRequesterTasks();
+            })
+            .subscribe();
+            
     } else if (role === 'worker') {
         loadWorkerProfile();
         loadWorkerAssignedTask();
+        
+        // Listen for task assignment instantly
+        realtimeSubscription = supabaseClient.channel('worker-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, payload => {
+                loadWorkerAssignedTask();
+            })
+            .subscribe();
+            
     } else if (role === 'admin') {
         loadAdminData();
         setupAdminRealtime();
@@ -247,8 +271,9 @@ async function handleCreateTask() {
         msg.textContent = 'Error creating task: ' + error.message;
     } else {
         msg.textContent = 'Task created successfully!';
+        document.getElementById('task-x').value = '';
+        document.getElementById('task-y').value = '';
         loadRequesterTasks();
-        setRandomPositions();
     }
 }
 
@@ -263,7 +288,8 @@ async function loadRequesterTasks() {
         list.innerHTML = '';
         data.forEach(task => {
             const li = document.createElement('li');
-            li.innerHTML = `<span>Type: ${task.required_job_type} | Loc: (${task.lat}, ${task.lng}) | Status: ${task.status}</span>`;
+            const statusLabel = (task.status === 'matched' || task.status === 'assigned') ? 'assigned' : task.status;
+            li.innerHTML = `<span>Type: ${task.required_job_type} | Loc: (${task.lat}, ${task.lng}) | Status: ${statusLabel}</span>`;
             if (task.status === 'pending') {
                 const btnContainer = document.createElement('div');
                 btnContainer.style.display = 'flex';
@@ -277,8 +303,16 @@ async function loadRequesterTasks() {
                 delBtn.style.borderColor = 'var(--accent-red)';
                 delBtn.style.color = 'var(--accent-red)';
                 delBtn.onclick = async () => {
-                    await supabaseClient.from('tasks').delete().eq('id', task.id);
-                    loadRequesterTasks();
+                    try {
+                        const resp = await fetch(API_URL + '/api/tasks/' + task.id, { method: 'DELETE' });
+                        if (resp.ok) {
+                            loadRequesterTasks();
+                        } else {
+                            alert('Failed to delete task.');
+                        }
+                    } catch(e) {
+                        alert('Error deleting task: ' + e.message);
+                    }
                 };
                 
                 btnContainer.appendChild(delBtn);
@@ -298,9 +332,9 @@ async function loadWorkerProfile() {
         .single();
         
     if (!error && data) {
-        document.getElementById('worker-x').value = data.current_lat || 50;
-        document.getElementById('worker-y').value = data.current_lng || 50;
-        document.getElementById('worker-available').checked = data.is_available;
+        document.getElementById('worker-x').value = '';
+        document.getElementById('worker-y').value = '';
+        document.getElementById('worker-available').checked = data.is_available !== null ? data.is_available : true;
         const jobSelect = document.getElementById('worker-job-type');
         const customInput = document.getElementById('worker-job-custom');
         
@@ -348,35 +382,73 @@ async function handleUpdateWorkerProfile() {
 
     const { error } = await supabaseClient
         .from('worker_profiles')
-        .update({ current_lat: x, current_lng: y, is_available: available, job_type: type || undefined })
-        .eq('user_id', currentUser.id);
+        .upsert({ user_id: currentUser.id, current_lat: x, current_lng: y, is_available: available, job_type: type || undefined });
 
     if (error) {
         msg.textContent = 'Error updating profile: ' + error.message;
     } else {
         msg.textContent = 'Profile updated successfully!';
-        setRandomPositions();
     }
 }
+
+window.acceptAssignedTask = async function(taskId) {
+    await supabaseClient.from('tasks').update({ status: 'completed' }).eq('id', taskId);
+    loadWorkerAssignedTask();
+};
+
+window.rejectAssignedTask = async function(taskId) {
+    await supabaseClient.from('tasks').update({ status: 'pending', assigned_worker_id: null }).eq('id', taskId);
+    await supabaseClient.from('worker_profiles').update({ current_lat: null, current_lng: null, is_available: false }).eq('user_id', currentUser.id);
+    loadWorkerProfile();
+    loadWorkerAssignedTask();
+};
 
 async function loadWorkerAssignedTask() {
     const { data, error } = await supabaseClient
         .from('tasks')
         .select('*')
         .eq('assigned_worker_id', currentUser.id)
-        .neq('status', 'completed');
+        .in('status', ['matched', 'completed']);
 
     const div = document.getElementById('worker-assigned-task');
     if (!error && data && data.length > 0) {
         const t = data[0];
-        div.innerHTML = `Assigned Task ID: ${t.id}<br>Type: ${t.required_job_type}<br>Location: (${t.lat}, ${t.lng})`;
+        let buttonsHtml = '';
+        if (t.status === 'matched' || t.status === 'matched') {
+            buttonsHtml = `
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="acceptAssignedTask('${t.id}')">Accept Task</button>
+                    <button class="btn btn-secondary" style="border-color: var(--accent-red); color: var(--accent-red);" onclick="rejectAssignedTask('${t.id}')">Reject Task</button>
+                </div>
+            `;
+        } else if (t.status === 'completed') {
+            buttonsHtml = `<div style="margin-top: 15px; color: var(--accent-green); font-weight: bold; padding-top: 10px; border-top: 1px solid var(--border-color);">Task Accepted and In Progress</div>`;
+        }
+        
+        div.innerHTML = `
+            <div style="padding: 15px; background: var(--bg-tertiary); border-radius: 10px; border-left: 4px solid var(--accent-green); box-shadow: var(--shadow-sm);">
+                <strong style="color: var(--accent-green); font-size: 1.1rem; display: block; margin-bottom: 10px;">✓ Task Assigned</strong>
+                <div style="color: var(--text-secondary); margin-bottom: 5px;"><strong>Type:</strong> ${t.required_job_type}</div>
+                <div style="color: var(--text-secondary); margin-bottom: 5px;"><strong>Location:</strong> (${t.lat}, ${t.lng})</div>
+                <div style="color: var(--text-secondary); margin-bottom: 5px;"><strong>Task ID:</strong> ${t.id}</div>
+                ${buttonsHtml}
+            </div>`;
     } else {
-        div.textContent = 'No active task.';
+        div.innerHTML = '<div style="color: var(--text-muted); padding: 10px;">No active task.</div>';
     }
 }
 
 // --- Admin Logic ---
+let adminUserEmails = {};
+
 async function loadAdminData() {
+    try {
+        const emailRes = await fetch(API_URL + '/api/users');
+        if (emailRes.ok) adminUserEmails = await emailRes.json();
+    } catch (e) {
+        console.warn("Could not load user emails");
+    }
+
     const [tasksRes, workersRes] = await Promise.all([
         supabaseClient.from('tasks').select('*'),
         supabaseClient.from('worker_profiles').select('*')
@@ -387,6 +459,35 @@ async function loadAdminData() {
     
     updateAdminUI();
     renderMap();
+    if (!isAnimating) renderAssignedHistory();
+}
+
+function renderAssignedHistory() {
+    const historyDiv = document.getElementById('proposal-history');
+    if (!historyDiv) return;
+    historyDiv.innerHTML = ''; // Clear previous history
+    
+    let historyHtml = '';
+    adminTasks.forEach((t, tIdx) => {
+        if (t.assigned_worker_id && ['matched', 'completed'].includes(t.status)) {
+            const wIdx = adminWorkers.findIndex(worker => worker.user_id === t.assigned_worker_id);
+            if (wIdx !== -1) {
+                if (t.status === 'matched') {
+                    historyHtml += `<div class="history-entry accepted" style="margin-bottom: 5px;"><span>W${wIdx+1}</span><span class="arrow">→</span><span>T${tIdx+1}</span><span class="result-text" style="color: var(--accent-orange);">Pending Worker Action</span></div>`;
+                } else if (t.status === 'completed') {
+                    historyHtml += `<div class="history-entry accepted" style="margin-bottom: 5px;"><span>W${wIdx+1}</span><span class="arrow">→</span><span>T${tIdx+1}</span><span class="result-text accepted" style="color: var(--accent-green);">★ Accepted</span></div>`;
+                } else if (t.status === 'rejected') {
+                    historyHtml += `<div class="history-entry accepted" style="margin-bottom: 5px; border-left-color: var(--accent-red);"><span>W${wIdx+1}</span><span class="arrow">→</span><span>T${tIdx+1}</span><span class="result-text" style="color: var(--accent-red);">✕ Rejected</span></div>`;
+                }
+            }
+        }
+    });
+    
+    if (historyHtml) {
+        historyDiv.innerHTML = '<div style="margin-bottom: 10px; font-weight: bold; color: var(--text-muted); font-size: 0.85rem;">Loaded from Database:</div>' + historyHtml;
+    } else {
+        historyDiv.innerHTML = '<div style="color: var(--text-muted); padding: 10px;">No history yet.</div>';
+    }
 }
 
 function updateAdminUI() {
@@ -431,8 +532,11 @@ function setupAdminRealtime() {
                 const idx = adminTasks.findIndex(t => t.id === payload.new.id);
                 if (idx !== -1) adminTasks[idx] = payload.new;
             }
-            updateAdminUI();
-            renderMap();
+            if (!isAnimating) {
+                updateAdminUI();
+                renderMap();
+                renderAssignedHistory();
+            }
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'worker_profiles' }, payload => {
             if (payload.eventType === 'INSERT') {
@@ -441,8 +545,11 @@ function setupAdminRealtime() {
                 const idx = adminWorkers.findIndex(w => w.user_id === payload.new.user_id);
                 if (idx !== -1) adminWorkers[idx] = payload.new;
             }
-            updateAdminUI();
-            renderMap();
+            if (!isAnimating) {
+                updateAdminUI();
+                renderMap();
+                renderAssignedHistory();
+            }
         })
         .subscribe();
 }
@@ -493,6 +600,8 @@ function renderMap() {
 
     // Workers
     adminWorkers.forEach((w, i) => {
+        if (w.current_lat === null || w.current_lng === null) return; // Don't draw if cleared
+        
         const g = document.createElementNS(SVG_NS, 'g');
         g.setAttribute('class', 'worker-node');
         g.setAttribute('transform', `translate(${w.current_lat}, ${w.current_lng})`);
@@ -508,7 +617,8 @@ function renderMap() {
         text.setAttribute('y', '4');
         
         const title = document.createElementNS(SVG_NS, 'title');
-        title.textContent = `Worker: W${i+1}\nRole: ${w.job_type}\nStatus: ${w.is_available ? 'Available' : 'Busy'}\nLocation: (${w.current_lat}, ${w.current_lng})`;
+        const email = adminUserEmails[w.user_id] || w.user_id;
+        title.textContent = `Worker: W${i+1}\nUser: ${email}\nRole: ${w.job_type}\nStatus: ${w.is_available ? 'Available' : 'Busy'}\nLocation: (${w.current_lat}, ${w.current_lng})`;
         g.appendChild(title);
         
         g.appendChild(circle);
@@ -540,7 +650,8 @@ function renderMap() {
         text.setAttribute('y', '4');
         
         const title = document.createElementNS(SVG_NS, 'title');
-        title.textContent = `Task: T${i+1}\nRequired: ${t.required_job_type}\nStatus: ${t.status}\nLocation: (${t.lat}, ${t.lng})`;
+        const email = adminUserEmails[t.requester_id] || t.requester_id;
+        title.textContent = `Task: T${i+1}\nRequester: ${email}\nRequired: ${t.required_job_type}\nStatus: ${t.status}\nLocation: (${t.lat}, ${t.lng})`;
         g.appendChild(title);
         
         g.appendChild(rect);
@@ -583,6 +694,7 @@ async function handleRunMatching() {
 }
 
 function animateServerSteps(steps) {
+    isAnimating = true;
     const svg = document.getElementById('spatial-svg');
     const speedSlider = document.getElementById('speed-slider');
     const speed = speedSlider ? parseInt(speedSlider.value, 10) : 800;
@@ -624,8 +736,8 @@ function animateServerSteps(steps) {
                 line.setAttribute('class', 'match-edge');
                 svg.appendChild(line);
                 
-                document.getElementById('step-explanation').textContent = `Task T${tIdx+1} accepts Worker W${wIdx+1}.`;
-                resultHtml = `<div class="history-entry accepted"><span>W${wIdx+1}</span><span class="arrow">→</span><span>T${tIdx+1}</span><span class="result-text accepted">✓ Accepted</span></div>`;
+                document.getElementById('step-explanation').textContent = `Task T${tIdx+1} assigns Worker W${wIdx+1}.`;
+                resultHtml = `<div class="history-entry accepted"><span>W${wIdx+1}</span><span class="arrow">→</span><span>T${tIdx+1}</span><span class="result-text accepted">✓ Assigned</span></div>`;
             } else if (step.type === 'reject') {
                 const rejectCircle = document.createElementNS(SVG_NS, 'circle');
                 rejectCircle.setAttribute('cx', t.lat);
@@ -650,8 +762,32 @@ function animateServerSteps(steps) {
     });
     
     setTimeout(() => {
+        isAnimating = false;
         document.getElementById('step-explanation').innerHTML = "<strong>Algorithm Complete!</strong> Server execution finished.";
         document.getElementById('algorithm-status-badge').textContent = "Completed";
+        
+        // Show summary overlay
+        const overlay = document.getElementById('completion-overlay');
+        const matchedCount = adminTasks.filter(t => t.assigned_worker_id).length;
+        document.getElementById('summary-matched').textContent = matchedCount;
+        document.getElementById('summary-proposals').textContent = steps.length;
+        
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            // Force reflow for transitions
+            void overlay.offsetWidth;
+            overlay.style.opacity = '1';
+            overlay.style.pointerEvents = 'auto';
+            overlay.querySelector('.modal-container').style.transform = 'translateY(0)';
+            
+            document.getElementById('btn-close-summary').onclick = () => {
+                overlay.style.opacity = '0';
+                overlay.style.pointerEvents = 'none';
+                overlay.querySelector('.modal-container').style.transform = 'translateY(20px)';
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            };
+        }
+        
         loadAdminData(); // Refresh final matches state
     }, delay + 500);
 }

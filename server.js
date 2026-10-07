@@ -32,7 +32,7 @@ app.post('/api/auth/register', async (req, res) => {
         if (roleError) return res.status(400).json({ error: roleError.message });
         
         if (role === 'worker') {
-            await supabase.from('worker_profiles').insert([{ user_id: data.user.id, job_type: 'Plumber' }]);
+            await supabase.from('worker_profiles').insert([{ user_id: data.user.id, job_type: 'Plumber', is_available: true }]);
         }
         
         res.json({ message: 'User created' });
@@ -45,8 +45,6 @@ app.post('/api/clear', async (req, res) => {
     try {
         await supabase.from('tasks').delete().not('id', 'is', null);
         await supabase.from('worker_profiles').delete().not('user_id', 'is', null);
-        // we can also remove users from user_roles to wipe it completely
-        await supabase.from('user_roles').delete().not('user_id', 'is', null);
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -56,6 +54,30 @@ app.post('/api/clear', async (req, res) => {
 function getDistance(lat1, lng1, lat2, lng2) {
     return Math.sqrt(Math.pow(lat1 - lat2, 2) + Math.pow(lng1 - lng2, 2));
 }
+
+app.delete('/api/tasks/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { error } = await supabase.from('tasks').delete().eq('id', id).eq('status', 'pending');
+        if (error) return res.status(400).json({ error: error.message });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.get('/api/users', async (req, res) => {
+    try {
+        const { data: { users }, error } = await supabase.auth.admin.listUsers();
+        if (error) return res.status(400).json({ error: error.message });
+        
+        const userMap = {};
+        users.forEach(u => userMap[u.id] = u.email);
+        res.json(userMap);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 
 app.post('/api/match', async (req, res) => {
     try {
