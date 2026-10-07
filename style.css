@@ -909,13 +909,7 @@ ul#requester-tasks-list li {
     align-items: center;
 }
 #worker-assigned-task {
-    background: var(--bg-tertiary);
-    padding: 20px;
-    border-radius: 10px;
-    border-left: 4px solid var(--accent-green);
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
+    /* Removed hardcoded styling so inner elements can style themselves */
 }
 
 /* SVG Animation & Matching Lines */
@@ -951,6 +945,59 @@ ul#requester-tasks-list li {
 }
 
 
+/* New UI Elements */
+.blinking-badge {
+    animation: blinker 1s linear infinite;
+    background: var(--accent-red);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    border: none;
+    margin-left: 10px;
+}
+@keyframes blinker {
+  50% { opacity: 0; }
+}
+
+.star-rating span {
+    color: var(--text-muted);
+    transition: color 0.2s;
+}
+.star-rating span:hover, .star-rating span.active {
+    color: var(--accent-yellow);
+}
+
+.worker-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.profile-stats {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+.stat-box {
+    background: var(--bg-tertiary);
+    padding: 10px 15px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+.stat-val {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--accent-blue);
+}
+
 .btn-demo-play:hover {
     width: 130px !important;
     background: var(--accent-blue) !important;
@@ -960,36 +1007,6 @@ ul#requester-tasks-list li {
     opacity: 1 !important;
 }
 
-
-
-
-.role-dashboard > h2 {
-    flex-shrink: 0;
-}
-
-.role-dashboard > p {
-    flex-shrink: 0;
-}
-
-
-
-
-
-/* Allow lists inside cards to scroll */
-#requester-tasks-list, 
-#worker-assigned-task {
-    flex: 1;
-    overflow-y: auto;
-    padding-right: 5px;
-}
-
-.auth-floating-play {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-}
-
-
 .role-dashboard {
     max-width: 1100px;
     width: 100%;
@@ -997,16 +1014,14 @@ ul#requester-tasks-list li {
     padding: 0 30px;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 140px); /* Leave room for header and margins */
+    height: calc(100vh - 140px);
 }
-
 .role-dashboard > h2 {
     text-align: center;
     font-size: 2rem;
     color: var(--text-primary);
     margin-bottom: 10px;
 }
-
 .role-dashboard > p {
     text-align: center;
     font-size: 1rem;
@@ -1018,10 +1033,9 @@ ul#requester-tasks-list li {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 30px;
-    flex: 1; /* Take remaining vertical space */
-    min-height: 0; /* Crucial for grid overflow */
+    flex: 1;
+    min-height: 0;
 }
-
 .dashboard-card {
     background: var(--bg-secondary);
     padding: 30px;
@@ -1030,10 +1044,9 @@ ul#requester-tasks-list li {
     border: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* Internal scrolling for the card */
+    overflow-y: auto;
     min-height: 0;
 }
-
 .dashboard-card h3 {
     margin-top: 0;
     margin-bottom: 20px;
@@ -1044,8 +1057,14 @@ ul#requester-tasks-list li {
     flex-shrink: 0;
 }
 
-/* Allow nested lists to behave properly */
-#requester-tasks-list, 
-#worker-assigned-task {
-    flex: 1;
+ul { list-style: none; padding: 0; }
+li.task-item {
+    background: var(--bg-tertiary);
+    margin-bottom: 10px;
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid var(--accent-orange);
+    color: var(--text-primary);
+    font-weight: 500;
 }
+

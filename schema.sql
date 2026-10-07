@@ -1,63 +1,46 @@
--- schema.sql
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- 1. Drop existing constraints if they exist
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_status_check;
 
--- We use Supabase Auth. User Roles table links to auth.users.
-CREATE TABLE IF NOT EXISTS public.user_roles (
-    user_id UUID PRIMARY KEY,
-    role VARCHAR(50) NOT NULL CHECK (role IN ('requester', 'worker', 'admin')),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- 2. Modify tasks table
+-- New allowed statuses: 'pending', 'pending_matching', 'offered', 'assigned', 'completed'
+ALTER TABLE tasks ADD CONSTRAINT tasks_status_check CHECK (
+    status IN ('pending', 'pending_matching', 'offered', 'assigned', 'completed')
 );
 
-CREATE TABLE IF NOT EXISTS public.worker_profiles (
-    user_id UUID PRIMARY KEY,
-    job_type VARCHAR(100) NOT NULL,
-    lat DOUBLE PRECISION NOT NULL DEFAULT 0,
-    lng DOUBLE PRECISION NOT NULL DEFAULT 0,
-    is_available BOOLEAN DEFAULT true
+-- 3. Modify worker_profiles table
+ALTER TABLE worker_profiles 
+ADD COLUMN IF NOT EXISTS rating NUMERIC DEFAULT 0,
+ADD COLUMN IF NOT EXISTS total_ratings INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS experience INT DEFAULT 0;
+
+-- 4. Create task_offers table
+CREATE TABLE IF NOT EXISTS task_offers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    task_id UUID REFERENCES tasks(id) ON DELETE CASCADE,
+    worker_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    status TEXT CHECK (status IN ('pending_worker', 'accepted_by_worker', 'rejected_by_worker')) DEFAULT 'pending_worker',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(task_id, worker_id)
 );
 
-CREATE TABLE IF NOT EXISTS public.tasks (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    requester_id UUID,
-    required_job_type VARCHAR(100) NOT NULL,
-    lat DOUBLE PRECISION NOT NULL,
-    lng DOUBLE PRECISION NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'matched', 'completed')),
-    assigned_worker_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- 5. Enable RLS on task_offers
+ALTER TABLE task_offers ENABLE ROW LEVEL SECURITY;
+
+-- 6. Add basic RLS policies for task_offers (Adjust as per your security model)
+-- Allow workers to read and update their own offers
+CREATE POLICY "Workers can view their own offers" 
+ON task_offers FOR SELECT 
+USING (auth.uid() = worker_id);
+
+CREATE POLICY "Workers can update their own offers" 
+ON task_offers FOR UPDATE 
+USING (auth.uid() = worker_id);
+
+-- Allow requesters to view offers for their tasks
+CREATE POLICY "Requesters can view offers for their tasks" 
+ON task_offers FOR SELECT 
+USING (
+    task_id IN (SELECT id FROM tasks WHERE requester_id = auth.uid())
 );
 
--- Enable RLS
-ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.worker_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
-
--- User Roles RLS
-CREATE POLICY "Users can read own role" ON public.user_roles FOR SELECT USING (auth.uid() = user_id);
--- Allow users to insert their role on sign up
-CREATE POLICY "Users can insert own role" ON public.user_roles FOR INSERT WITH CHECK (auth.uid() = user_id);
-
--- Worker Profiles RLS
-CREATE POLICY "Workers can read/update own profile" ON public.worker_profiles FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Admins have full access to worker profiles" ON public.worker_profiles FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'admin')
-);
-CREATE POLICY "Anyone can read available workers" ON public.worker_profiles FOR SELECT USING (is_available = true);
-
--- Tasks RLS
-CREATE POLICY "Requesters can read own tasks" ON public.tasks FOR SELECT USING (auth.uid() = requester_id);
-CREATE POLICY "Requesters can insert own tasks" ON public.tasks FOR INSERT WITH CHECK (auth.uid() = requester_id);
-CREATE POLICY "Workers can read assigned tasks" ON public.tasks FOR SELECT USING (auth.uid() = assigned_worker_id);
-CREATE POLICY "Workers can update assigned tasks" ON public.tasks FOR UPDATE USING (auth.uid() = assigned_worker_id);
-CREATE POLICY "Admins have full access to tasks" ON public.tasks FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'admin')
-);
-
--- Realtime Setup
-BEGIN;
-  DROP PUBLICATION IF EXISTS supabase_realtime;
-  CREATE PUBLICATION supabase_realtime;
-COMMIT;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.tasks;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.worker_profiles;
+-- Service role can do everything (handled automatically)

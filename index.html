@@ -5,20 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Spatial Crowdsourcing — Stable Marriage Algorithm</title>
   <meta name="description" content="Interactive educational simulation of the Gale-Shapley Stable Marriage Algorithm applied to spatial crowdsourcing task assignment.">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=7">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div id="auth-screen" class="screen">
-<div class="auth-floating-play">
-      <div class="demo-btn-container" style="position: relative; display: inline-block;">
-          <a href="demo.html" class="btn-demo-play" style="display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; background: var(--accent-purple); color: white; border: none; cursor: pointer; text-decoration: none; transition: all 0.3s ease; overflow: hidden; white-space: nowrap;">
-              <svg style="flex-shrink: 0;" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <span class="demo-text" style="display: none; margin-left: 8px; font-weight: 600; font-size: 0.85rem; opacity: 0; transition: opacity 0.3s ease;">View Demo</span>
-          </a>
-      </div>
-</div>
+        <div class="auth-floating-play">
+            <div class="demo-btn-container" style="position: relative; display: inline-block;">
+                <a href="demo.html" class="btn-demo-play" style="display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; background: var(--accent-purple); color: white; border: none; cursor: pointer; text-decoration: none; transition: all 0.3s ease; overflow: hidden; white-space: nowrap;">
+                    <svg style="flex-shrink: 0;" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <span class="demo-text" style="display: none; margin-left: 8px; font-weight: 600; font-size: 0.85rem; opacity: 0; transition: opacity 0.3s ease;">View Demo</span>
+                </a>
+            </div>
+        </div>
         <div class="auth-header">
             <h2>Welcome to SCSMA</h2>
             <p>Spatial Crowdsourcing Simulation</p>
@@ -54,16 +57,15 @@
             <div class="header-right">
                 <span id="user-info"></span>
                 <span id="algorithm-status-badge" class="status-badge status-ready hidden">Ready</span>
-                <!-- Dashboard play -->
+                
+                <div class="demo-btn-container" style="position: relative; display: inline-block;">
+                    <a href="demo.html" class="btn-demo-play" style="display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; background: var(--accent-purple); color: white; border: none; cursor: pointer; text-decoration: none; transition: all 0.3s ease; overflow: hidden; white-space: nowrap;">
+                        <svg style="flex-shrink: 0;" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <span class="demo-text" style="display: none; margin-left: 8px; font-weight: 600; font-size: 0.85rem; opacity: 0; transition: opacity 0.3s ease;">View Demo</span>
+                    </a>
+                </div>
 
-      <div class="demo-btn-container" style="position: relative; display: inline-block;">
-          <a href="demo.html" class="btn-demo-play" style="display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; background: var(--accent-purple); color: white; border: none; cursor: pointer; text-decoration: none; transition: all 0.3s ease; overflow: hidden; white-space: nowrap;">
-              <svg style="flex-shrink: 0;" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <span class="demo-text" style="display: none; margin-left: 8px; font-weight: 600; font-size: 0.85rem; opacity: 0; transition: opacity 0.3s ease;">View Demo</span>
-          </a>
-      </div>
-
-<button id="btn-theme" class="header-icon-btn" aria-label="Toggle Theme" title="Toggle Theme">
+                <button id="btn-theme" class="header-icon-btn" aria-label="Toggle Theme" title="Toggle Theme">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="moon-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 </button>
                 <button id="btn-logout" class="header-icon-btn" aria-label="Logout" title="Logout">
@@ -72,9 +74,10 @@
             </div>
         </header>
 
-                <div id="requester-dashboard" class="role-dashboard hidden">
+        <!-- REQUESTER DASHBOARD -->
+        <div id="requester-dashboard" class="role-dashboard hidden">
             <h2>Requester Dashboard</h2>
-            <p style="margin-bottom:30px; color:var(--text-muted);">Manage and post your tasks.</p>
+            <p>Manage and post your tasks.</p>
             
             <div class="cards-container">
                 <div class="dashboard-card">
@@ -89,190 +92,231 @@
                         <option value="Plumber">Plumber</option>
                         <option value="Electrician">Electrician</option>
                         <option value="Cleaner">Cleaner</option>
-                        <option value="Carpenter">Carpenter</option>
-                        <option value="Painter">Painter</option>
-                        <option value="Delivery">Delivery</option>
-                        <option value="Other">Other</option>
+                        <option value="Other">Other...</option>
                     </select>
-                    <input type="text" id="task-type-custom" placeholder="Specify custom task type..." style="display: none; margin-top: 8px;">
-                    <button id="btn-create-task" class="btn btn-primary">Create Task</button>
+                    <input type="text" id="task-type-custom" placeholder="Specify Job Type" style="display:none;">
+                    <button id="btn-create-task" class="btn btn-primary">Post Task</button>
                     <div id="task-msg"></div>
                 </div>
                 
                 <div class="dashboard-card">
-                    <h3>My Tasks</h3>
+                    <h3>Your Tasks</h3>
                     <ul id="requester-tasks-list"></ul>
+                    
+                    <h3 style="margin-top: 20px;">Completed Tasks</h3>
+                    <ul id="requester-completed-tasks-list"></ul>
                 </div>
             </div>
         </div>
 
+        <!-- WORKER DASHBOARD -->
         <div id="worker-dashboard" class="role-dashboard hidden">
             <h2>Worker Dashboard</h2>
-            <p style="margin-bottom:30px; color:var(--text-muted);">Update your availability and find matches.</p>
+            <p>Set your availability and manage assigned tasks.</p>
             
             <div class="cards-container">
                 <div class="dashboard-card">
-                    <h3>My Profile Settings</h3>
-                    <label style="display:flex; align-items:center; gap:8px;">
-                        <input type="checkbox" id="worker-available" checked style="width:auto;"> Available
-                    </label>
-                    <div style="margin-top: 10px;">Profession / Job Type</div>
-                    <select id="worker-job-type" onchange="document.getElementById('worker-job-custom').style.display = this.value === 'Other' ? 'block' : 'none';">
-                        <option value="Plumber">Plumber</option>
-                        <option value="Electrician">Electrician</option>
-                        <option value="Cleaner">Cleaner</option>
-                        <option value="Carpenter">Carpenter</option>
-                        <option value="Painter">Painter</option>
-                        <option value="Delivery">Delivery</option>
-                        <option value="Other">Other</option>
-                    </select>
-                    <input type="text" id="worker-job-custom" placeholder="Specify custom job type..." style="display: none; margin-top: 8px;">
+                    <h3>Profile & Stats</h3>
+                    <div class="profile-stats">
+                        <div class="stat-box">
+                            <div class="stat-val" id="worker-rating">0.0</div>
+                            <div class="stat-label">★ Rating</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-val" id="worker-experience">0</div>
+                            <div class="stat-label">Experience</div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top:20px;">Update Status</h3>
                     <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between;">
-                        <span>Location (X, Y from 0-800)</span>
+                        <span>Current Location (X, Y)</span>
                         <button id="btn-randomize-worker" class="btn btn-secondary" style="width: auto; padding: 4px 12px; font-size: 0.75rem; margin: 0;">🎲 Randomize</button>
                     </div>
                     <input type="number" id="worker-x" placeholder="Enter X coordinate" min="0" max="800">
                     <input type="number" id="worker-y" placeholder="Enter Y coordinate" min="0" max="600">
+                    
+                    <label style="display: block; margin: 10px 0;">
+                        <input type="checkbox" id="worker-available" checked> Available for tasks
+                    </label>
+                    <select id="worker-job-type" onchange="document.getElementById('worker-job-custom').style.display = this.value === 'Other' ? 'block' : 'none';">
+                        <option value="Plumber">Plumber</option>
+                        <option value="Electrician">Electrician</option>
+                        <option value="Cleaner">Cleaner</option>
+                        <option value="Other">Other...</option>
+                    </select>
+                    <input type="text" id="worker-job-custom" placeholder="Specify Job Type" style="display:none;">
+                    
                     <button id="btn-update-worker" class="btn btn-primary">Update Profile</button>
                     <div id="worker-msg"></div>
                 </div>
                 
                 <div class="dashboard-card">
                     <h3>Current Assigned Task</h3>
-                    <div id="worker-assigned-task">No active task.</div>
+                    <div id="worker-assigned-task"></div>
+                    
+                    <h3 style="margin-top: 20px;">Completed Tasks</h3>
+                    <ul id="worker-completed-tasks-list"></ul>
                 </div>
             </div>
         </div>
 
-<main id="admin-dashboard" class="dashboard hidden">
-            <!-- LEFT PANEL: Controls -->
-            <aside id="controls-panel" class="panel">
-            <h2 class="panel-header">Simulation Controls</h2>
-
-            <section class="control-section">
-                <h3>Configuration</h3>
-                <!-- Real data is used, these just show counts -->
-                <div class="form-group">
-                <label>Workers in DB (Available)</label>
-                <div id="db-workers-count" style="font-size:1.2rem; font-weight:bold;">0</div>
+        <!-- ADMIN DASHBOARD -->
+        <div id="admin-dashboard" class="dashboard hidden">
+            <!-- Left Panel -->
+            <div class="panel">
+                <h2 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 20px; letter-spacing: 1px;">SIMULATION CONTROLS</h2>
+                
+                <div class="control-section" style="margin-bottom: 20px;">
+                    <h3 style="font-size: 0.8rem; text-transform: uppercase; margin-bottom: 10px;">CONFIGURATION</h3>
+                    <div style="margin-bottom: 15px;">
+                        <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">WORKERS IN DB (AVAILABLE)</div>
+                        <div id="stat-workers" style="font-size: 1.5rem; font-weight: 700;">0</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">PENDING TASKS IN DB</div>
+                        <div id="stat-tasks" style="font-size: 1.5rem; font-weight: 700;">0</div>
+                    </div>
                 </div>
-                <div class="form-group">
-                <label>Pending Tasks in DB</label>
-                <div id="db-tasks-count" style="font-size:1.2rem; font-weight:bold;">0</div>
+                
+                <div class="control-section" style="margin-bottom: 20px;">
+                    <h3 style="font-size: 0.8rem; text-transform: uppercase; margin-bottom: 10px;">ALGORITHM</h3>
+                    <div style="margin-bottom: 5px;">
+                        <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px;">MODE</div>
+                        <select id="algorithm-mode" class="form-group" style="margin-bottom: 10px; width: 100%;">
+                            <option value="worker">Worker-Proposing (Server)</option>
+                            <option value="task">Many-to-1 Stable Matching (Tasks Propose)</option>
+                        </select>
+                    </div>
+                    <button id="btn-start" class="btn btn-primary" style="width: 100%; margin-bottom: 10px; justify-content: center;">▶ Run Matching (Server)</button>
+                    <button id="btn-clear-db" class="btn btn-danger" style="width: 100%; justify-content: center;">Clear Simulation DB</button>
                 </div>
-            </section>
-
-            <section class="control-section">
-                <h3>Algorithm</h3>
-                <div class="form-group">
-                <label for="algorithm-mode">Mode</label>
-                <select id="algorithm-mode">
-                    <option value="worker">Worker-Proposing (Server)</option>
-<option value="task">Task-Proposing (Server)</option>
-                </select>
-                </div>
-                <div class="button-group">
-                <button id="btn-start" class="btn btn-primary">▶ Run Matching (Server)</button>
-<button id="btn-clear-db" class="btn btn-secondary" style="border-color: var(--accent-red); color: var(--accent-red); margin-top: 10px;">Clear Simulation DB</button>
-                </div>
-            </section>
-
-            <section class="control-section">
-                <h3>Animation Speed</h3>
-                <div class="slider-group">
-                <input type="range" id="speed-slider" min="100" max="2000" value="800" step="100" aria-label="Animation Speed">
-                <span id="speed-value">800ms</span>
-                </div>
-            </section>
-
-            <section class="control-section">
-                <h3>Step Explanation</h3>
-                <div id="step-explanation" class="step-explanation">
-                Wait for tasks and workers to be added, then Run Matching.
-                </div>
-            </section>
-            </aside>
-
-            <!-- CENTER PANEL: Visualization -->
-            <section id="visualization-panel" class="panel panel-center">
-            <h2 class="panel-header">Spatial Crowdsourcing Simulation</h2>
-
-            <div class="viz-wrapper">
-                <div id="viz-container" class="viz-container">
-                <svg id="spatial-svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
+                
+                <div class="control-section" style="margin-bottom: 20px;">
+                    <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px;">ANIMATION SPEED</div>
+                    <div class="slider-group">
+                        <input type="range" id="speed-slider" min="100" max="2000" step="100" value="800">
+                        <span id="speed-display">800ms</span>
+                    </div>
                 </div>
 
-                <div id="entity-info" class="entity-info">Displaying Live Database State</div>
-                <div id="preference-inspector" class="preference-inspector hidden">
-                <div class="pref-header-wrap">
-                    <div id="pref-inspector-header" class="pref-header"></div>
-                    <button id="btn-close-inspector" class="btn-close-sm" aria-label="Close inspector">✕</button>
-                </div>
-                <div id="pref-inspector-list" class="pref-list"></div>
+                <div class="control-section">
+                    <h3 style="font-size: 0.8rem; text-transform: uppercase; margin-bottom: 5px;">STEP EXPLANATION</h3>
+                    <div id="step-explanation" class="step-explanation" style="background: var(--bg-tertiary); padding: 10px; border-radius: 6px; font-size: 0.85rem; border-left: 3px solid var(--accent-purple);">Wait for tasks and workers to be added, then Run Matching.</div>
                 </div>
             </div>
-            </section>
-
-            <!-- RIGHT PANEL: Algorithm State -->
-            <aside id="state-panel" class="panel">
-            <h2 class="panel-header">Algorithm State</h2>
-
-            <div id="current-step-section" class="state-section">
-                <h3>Current Step</h3>
-                <div id="current-step-display" class="state-display">Waiting...</div>
-            </div>
-
-            <div id="current-proposal-section" class="state-section">
-                <h3>Current Proposal</h3>
-                <div id="current-proposal-display" class="proposal-display">None</div>
-            </div>
-
-            <div id="matches-section" class="state-section">
-                <h3>Current Matches (Live)</h3>
-                <div class="table-container">
-                <table id="matches-table" class="matches-table">
-                    <thead>
-                    <tr>
-                        <th>Worker</th>
-                        <th>Task</th>
-                        <th>Status</th>
-                    </tr>
-                    </thead>
-                    <tbody id="matches-tbody"></tbody>
-                </table>
+            
+            <!-- Center Panel (Visualization) -->
+            <div class="panel panel-center">
+                <div class="viz-container" style="height: 100%; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; position: relative;">
+                    <svg id="spatial-svg" style="width: 100%; height: 100%;"></svg>
+                    <div style="position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 0.7rem; color: var(--text-muted);">Displaying Live Database State</div>
                 </div>
             </div>
-
-            <div id="history-section" class="state-section">
-                <h3>Execution History</h3>
-                <div id="proposal-history" class="proposal-history"></div>
+            
+            <!-- Right Panel -->
+            <div class="panel" style="overflow-y: auto;">
+                <h2 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 20px; letter-spacing: 1px;">ALGORITHM STATE</h2>
+                
+                <div class="state-section" style="margin-bottom: 20px;">
+                    <h3 style="font-size: 0.75rem; text-transform: uppercase; margin-bottom: 5px;">CURRENT STEP</h3>
+                    <div id="current-step-display" class="state-display" style="background: var(--bg-tertiary); padding: 10px; border-radius: 6px; font-size: 0.85rem;">Waiting...</div>
+                </div>
+                
+                <div class="state-section" style="margin-bottom: 20px;">
+                    <h3 style="font-size: 0.75rem; text-transform: uppercase; margin-bottom: 5px;">CURRENT PROPOSAL</h3>
+                    <div id="current-proposal-display" class="proposal-display" style="background: var(--bg-tertiary); padding: 10px; border-radius: 6px; font-size: 0.85rem;">None</div>
+                </div>
+                
+                <div class="state-section" style="margin-bottom: 20px;">
+                    <h3 style="font-size: 0.75rem; text-transform: uppercase; margin-bottom: 5px;">CURRENT MATCHES (LIVE)</h3>
+                    <div class="table-container">
+                        <table class="matches-table" style="width: 100%; font-size: 0.85rem; text-align: left;">
+                            <thead style="color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">
+                                <tr>
+                                    <th style="padding-bottom: 10px;">Worker</th>
+                                    <th style="padding-bottom: 10px;">Task</th>
+                                    <th style="padding-bottom: 10px;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="matches-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="state-section">
+                    <h3 style="font-size: 0.75rem; text-transform: uppercase; margin-bottom: 5px;">EXECUTION HISTORY</h3>
+                    <div id="proposal-history" class="proposal-history" style="font-size: 0.85rem;">
+                        <div style="color: var(--text-muted); padding: 10px 0;">No history yet.</div>
+                    </div>
+                </div>
             </div>
-            </aside>
-        </main>
-        
-        <!-- STATS BAR for ADMIN -->
-    </div>
-    <!-- COMPLETION OVERLAY -->
-    <div id="completion-overlay" class="modal-overlay hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; pointer-events: none;">
-      <div class="modal-container text-center" style="background: var(--bg-primary); padding: 40px; border-radius: 16px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transform: translateY(20px); transition: all 0.3s ease; border: 1px solid var(--border-color);">
-        <div style="width: 60px; height: 60px; border-radius: 50%; background: #dcfce7; color: #16a34a; font-size: 32px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">✓</div>
-        <h2 style="color: var(--accent-green); margin-bottom: 30px; font-size: 1.5rem;">Stable Matching Found</h2>
-        
-        <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
-          <div>
-            <div id="summary-matched" style="font-size: 2rem; font-weight: 700; color: var(--accent-blue);">0</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Matched Pairs</div>
-          </div>
-          <div>
-            <div id="summary-proposals" style="font-size: 2rem; font-weight: 700; color: var(--accent-purple);">0</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Total Steps</div>
-          </div>
         </div>
-        
-        <button id="btn-close-summary" class="btn btn-primary" style="width: 100%; pointer-events: auto;">View Dashboard</button>
-      </div>
     </div>
-  
-  <script src="script.js"></script>
+    
+    <!-- MODALS -->
+    <!-- Selection Modal for Requester -->
+    <div id="worker-selection-modal" class="modal-overlay hidden">
+        <div class="modal-container" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Select Worker for Task</h2>
+                <button class="modal-close-btn" onclick="document.getElementById('worker-selection-modal').classList.add('hidden')">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>These workers have accepted your task. Approve one to assign them.</p>
+                <div id="worker-selection-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rate Worker Modal -->
+    <div id="rate-worker-modal" class="modal-overlay hidden">
+        <div class="modal-container" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Rate Worker</h2>
+                <button class="modal-close-btn" onclick="document.getElementById('rate-worker-modal').classList.add('hidden')">✕</button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <p>How was your experience with this worker?</p>
+                <div class="star-rating" style="font-size: 2rem; margin: 20px 0; cursor: pointer;">
+                    <span data-val="1">☆</span><span data-val="2">☆</span><span data-val="3">☆</span><span data-val="4">☆</span><span data-val="5">☆</span>
+                </div>
+                <input type="hidden" id="rating-val" value="5">
+                <button id="btn-submit-rating" class="btn btn-primary">Submit & Complete</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admin Completion Overlay -->
+    <div id="completion-overlay" class="completion-overlay hidden">
+        <div class="completion-content">
+            <div class="completion-check-icon">✓</div>
+            <h2>Stable Matching Found</h2>
+            <p>The Gale-Shapley algorithm has successfully found a stable matching between all available tasks and workers on the server.</p>
+            
+            <div class="completion-stat-grid">
+                <div class="completion-stat-item">
+                    <span class="completion-stat-value" id="summary-matched">0</span>
+                    <span class="completion-stat-label">Matches</span>
+                </div>
+                <div class="completion-stat-item">
+                    <span class="completion-stat-value" id="summary-proposals">0</span>
+                    <span class="completion-stat-label">Proposals</span>
+                </div>
+            </div>
+            
+            <div class="stability-result stable">
+                <strong>✓ Mathematically Stable</strong><br>
+                There is no task and worker who both prefer each other over their current assignments.
+            </div>
+            
+            <div class="completion-actions">
+                <button id="btn-close-summary" class="btn btn-secondary">View Final State</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=7"></script>
 </body>
 </html>
